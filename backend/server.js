@@ -1,7 +1,6 @@
 // init
 const app = require('express');
 const socket = require('socket.io');
-const randomstring = require('randomstring');
 const express = app();
 
 // start server on port 4000
