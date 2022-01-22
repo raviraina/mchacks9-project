@@ -18,13 +18,13 @@ const {
     moves,
     makeMove,
     choices
-} = require("./util/users");
+} = require("./users");
 const {
     createRoom,
     joinRoom,
     exitRoom,
     rooms
-} = require("./util/rooms");
+} = require("./rooms");
 const e = require("express");
 const {
     exitCode
@@ -206,4 +206,4 @@ io.on("connection", socket => {
     })
 })
 
-server.listen(5000, () => console.log("Server started on port 5000..."));
+server.listen(4000, () => console.log("Server started on port 4000..."));
