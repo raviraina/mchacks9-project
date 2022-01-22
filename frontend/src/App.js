@@ -1,6 +1,7 @@
+import Game from './Game';
 import './App.css';
-import Game from './Game'
 import Login from './Login'
+import AuthenticateTest from './AuthenticateTest';
 
 import {
   BrowserRouter,
@@ -14,6 +15,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="game" element={<Game />} />
+          <Route path="test" element={<AuthenticateTest />} />
         </Routes>
       </BrowserRouter>
     </div>
