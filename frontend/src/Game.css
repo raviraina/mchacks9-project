@@ -3,6 +3,21 @@
     padding: 0;
 }
 
+.login-button {
+    background-color: white;
+    padding: 5px;
+    margin-top: 10px;
+    border: 3px black solid;
+    border-radius: 3px;
+
+
+}
+
+.login-button:hover {
+    background-color: grey;
+    cursor: pointer;
+}
+
 
 .whole-page{
     width: 100%;
