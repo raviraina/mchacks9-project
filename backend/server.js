@@ -18,6 +18,9 @@ let players = {};
 let choice1 = "";
 let choice2 = "";
 
+// TODO: socket functions to implement frontend side
+// createdGame, p1, p2, newGame, result
+
 io.on("connection", (socket) => {
 
     // create a new game
