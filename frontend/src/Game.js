@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 
 const options = [
-
   {
     id: 1,
     src: "/mask.png",
@@ -18,6 +17,21 @@ const options = [
     src: "/omicron.png",
   },
 ];
+
+export const TitleBar = () => {
+  return (
+    <div className="title-bar">
+      <QuestionIcon></QuestionIcon>
+      <div style={{ display: "flex", alignItems: "center" }}>
+        <h1 className="title-bar-title">ROCK PAPER COVID</h1>
+      </div>
+      <div>
+        <StatsIcon></StatsIcon>
+        <SettingsIcon></SettingsIcon>
+      </div>
+    </div>
+  );
+};
 
 const Game = () => {
   const { user, isAuthenticated } = useAuth0();
@@ -39,16 +53,7 @@ const Game = () => {
     return (
       <div className="whole-page">
         <div className="game-container">
-          <div className="title-bar">
-            <QuestionIcon></QuestionIcon>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <h1 className="title-bar-title">ROCK PAPER COVID</h1>
-            </div>
-            <div>
-              <StatsIcon></StatsIcon>
-              <SettingsIcon></SettingsIcon>
-            </div>
-          </div>
+          <TitleBar></TitleBar>
           <div className="player-display">
             <div className="player-info">
               <img
@@ -68,9 +73,7 @@ const Game = () => {
             </div>
           </div>
           <div className="timer-and-result">
-            <h2 className="timer-message">
-              Pick an option...
-            </h2>
+            <h2 className="timer-message">Pick an option...</h2>
             <h2 className="countdown-timer">{countdown}</h2>
           </div>
           <div className="options-menu">
