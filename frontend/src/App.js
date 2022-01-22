@@ -10,7 +10,7 @@ import {
 } from "react-router-dom";
 function App() {
   return (
-    <div className="App">
+    <>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Login />} />
@@ -18,7 +18,7 @@ function App() {
           <Route path="test" element={<AuthenticateTest />} />
         </Routes>
       </BrowserRouter>
-    </div>
+    </>
   );
 }
 
