@@ -17,17 +17,17 @@ const options = [
   {
     id: 1,
     src: "/mask.png",
-    type: "rock"
+    type: "rock",
   },
   {
     id: 2,
     src: "/vaccine.png",
-    type: "paper"
+    type: "paper",
   },
   {
     id: 3,
     src: "/omicron.png",
-    type:"scissor"
+    type: "scissor",
   },
 ];
 
@@ -48,14 +48,17 @@ export const TitleBar = () => {
 
 const Game = () => {
   const { user, isAuthenticated } = useAuth0();
-  const [countdown, setCountdown] = useState(5);
   const [selection, setSelection] = useState(undefined);
   const [socket, setSocket] = useState(null);
   const [isInGame, setIsInGame] = useState(false);
   const [roomdID, setRoomID] = useState(null);
-  const [playerNum, setPlayerNum] = useState(null);
-  const [hasWon, setHasWon] = useState(null)
+  const [playerNum, setPlayerNum] = useState(0);
+  const [result, setResult] = useState(null);
+  const [pressedJoinGame, setPressedJoinGame] = useState(false);
 
+  const resultFinder = () =>{
+    console.log(window.localStorage.getItem("player"))
+  }
 
   useEffect(() => {
     const newSocket = io("http://localhost:4000");
@@ -74,41 +77,67 @@ const Game = () => {
       setRoomID(roomId);
       setPlayerNum(2);
     });
-    // results listeners 
+    // results listeners
     newSocket.on("player-1-wins", () => {
-      console.log("player 1 wins");
-      setRoomID(null)
-      setIsInGame(false)
-      setSelection(undefined)
+      console.log("player 1 wins, heres your id: " + window.localStorage.getItem("player"));
+      if (window.localStorage.getItem("player") === 1){
+        setResult("You won")
+      }
+      else {
+        setResult("You lost")
+      }
+
+      setPlayerNum(null);
+      setRoomID(null);
+      setIsInGame(false);
+      setSelection(undefined);
+      setPressedJoinGame(false);
     });
     newSocket.on("player-2-wins", () => {
-      console.log("player 2 wins");
-      setRoomID(null)
-      setIsInGame(false)
-      setSelection(undefined)
+      console.log("player 2 wins, heres your id: " + window.localStorage.getItem("player"));
+      if (window.localStorage.getItem("player") === 2){
+        setResult("You won")
+      }
+      else {
+        setResult("You lost")
+      }
+      setPlayerNum(null);
+      setRoomID(null);
+      setIsInGame(false);
+      setSelection(undefined);
+      setPressedJoinGame(false);
     });
     newSocket.on("draw", () => {
       console.log("draw");
-      setRoomID(null)
-      setIsInGame(false)
-      setSelection(undefined)
+      setResult("Draw")
+
+      setPlayerNum(null);
+      setRoomID(null);
+      setIsInGame(false);
+      setSelection(undefined);
+      setPressedJoinGame(false);
     });
     return () => newSocket.close();
   }, []);
 
   const requestToJoinGame = () => {
+    setPressedJoinGame(true);
     socket.emit("createJoinRoom", user.name);
   };
 
-
   const onOptionSelect = (id) => {
+    if (isInGame === false){
+      return 0;
+    }
     setSelection(id);
-    const choice = options.filter((item)=>item.id === id)[0].type
+    const choice = options.filter((item) => item.id === id)[0].type;
     const data = {
+      userId: user.name,
       playerId: playerNum,
       myChoice: choice,
       roomId: roomdID,
     };
+    window.localStorage.setItem("player", playerNum)
     console.log(JSON.stringify(data));
     socket.emit("make-move", data);
   };
@@ -144,8 +173,15 @@ const Game = () => {
                 </div>
               </>
             )}
-            {!isInGame && (
-              <button className="login-button" style={} onClick={() => requestToJoinGame()}>Join Game</button>
+            {!pressedJoinGame && result && <div>{result}</div>}
+            {!pressedJoinGame && (
+              <button
+                className="login-button"
+                style={{ padding: "20px" }}
+                onClick={() => requestToJoinGame()}
+              >
+                Join Game
+              </button>
             )}
           </div>
           <div className="options-menu">
