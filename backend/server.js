@@ -4,6 +4,17 @@ const path = require("path");
 const socketio = require("socket.io");
 const randomstring = require('randomstring');
 const app = express();
+const mongoose = require('mongoose');
+require('dotenv/config');
+
+
+mongoose.connect(process.env.DB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => {
+        console.log('DB Connected!');
+    })
+    .catch((err) => {
+        console.log(err);
+    });
 
 //const server = http.createServer(app);
 
@@ -12,7 +23,7 @@ const app = express();
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server, {
-    cors:{
+    cors: {
         origin: "http://localhost:3000"
     }
 });
@@ -41,10 +52,10 @@ const {
 // };
 
 const allRoomsFull = () => {
-     //let areRoomsFull = true;
-     //rooms.forEach((item)=>{
+    //let areRoomsFull = true;
+    //rooms.forEach((item)=>{
 
-     //})
+    //})
     for (let room in rooms) {
         if (rooms[room][1] === "") {
             return false
