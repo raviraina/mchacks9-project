@@ -50,15 +50,25 @@ const allRoomsFull = () => {
     return true;
 }
 
+let leaderboard = {};
 const updateLeaderboard = (playerID, win) => {
-    // if playerID not in database
-    // create playerID entry
+    if (!leaderboard[playerID]) {
+        leaderboard[playerID] = {
+            gp: 0,
+            wins: 0
+        }
+    }
 
-    // if win is true
-    // increment playerID win, games played fields
-    // else
-    // increment games played field
+    leaderboard[playerID][gp] += 1;
+
+    if (win) {
+        leaderboard[playerID][win] += 1;
+    }
 }
+
+app.get('/updateLeaderboard', function (req, res) {
+    res.send(JSON.stringify(leaderboard));
+})
 
 // socket functions
 io.on("connection", socket => {
@@ -139,7 +149,6 @@ io.on("connection", socket => {
                     updateLeaderboard(userId, false);
                 }
 
-                updateLeaderboard(userId, true)
                 io.to(roomId).emit("player-2-wins", {
                     myChoice,
                     enemyChoice
