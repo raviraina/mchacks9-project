@@ -3,6 +3,8 @@ import React, { useEffect } from "react";
 import { useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import io from "socket.io-client";
+import { useNavigate } from "react-router-dom";
+import Popup from './Popup';
 
 /*
 "rock": "scissor",
@@ -27,7 +29,7 @@ const options = [
   {
     id: 3,
     src: "/omicron.png",
-    type:"scissor"
+    type: "scissor"
   },
 ];
 
@@ -54,7 +56,8 @@ const Game = () => {
   const [isInGame, setIsInGame] = useState(false);
   const [roomdID, setRoomID] = useState(null);
   const [playerNum, setPlayerNum] = useState(null);
-  const [hasWon, setHasWon] = useState(null)
+  const [hasWon, setHasWon] = useState(null);
+
 
 
   useEffect(() => {
@@ -103,7 +106,7 @@ const Game = () => {
 
   const onOptionSelect = (id) => {
     setSelection(id);
-    const choice = options.filter((item)=>item.id === id)[0].type
+    const choice = options.filter((item) => item.id === id)[0].type
     const data = {
       playerId: playerNum,
       myChoice: choice,
@@ -191,6 +194,7 @@ const Option = ({ src, id, setSelection, selection }) => {
 };
 
 const SettingsIcon = () => {
+
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -207,33 +211,56 @@ const SettingsIcon = () => {
 };
 
 const StatsIcon = () => {
+  const navigate = useNavigate();
+  const selectStats = (event) => {
+    navigate("/");
+  };
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      height="24"
-      viewBox="0 0 24 24"
-      width="24"
-    >
-      <path
-        fill="var(--color-tone-3)"
-        d="M16,11V3H8v6H2v12h20V11H16z M10,5h4v14h-4V5z M4,11h4v8H4V11z M20,19h-4v-6h4V19z"
-      ></path>
-    </svg>
+    <button onClick={selectStats}>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          fill="var(--color-tone-3)"
+          d="M16,11V3H8v6H2v12h20V11H16z M10,5h4v14h-4V5z M4,11h4v8H4V11z M20,19h-4v-6h4V19z"
+
+        ></path>
+      </svg >
+    </button>
   );
 };
 const QuestionIcon = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const togglePopup = () => {
+    setIsOpen(!isOpen);
+  }
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      height="24"
-      viewBox="0 0 24 24"
-      width="24"
-    >
-      <path
-        fill="var(--color-tone-3)"
-        d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"
-      ></path>
-    </svg>
+    <button onClick={togglePopup}>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          fill="var(--color-tone-3)"
+          d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"
+        ></path>
+      </svg>
+
+      {isOpen && <Popup
+        content={<>
+          <p>Vaccine Beats Face Mask </p>
+          <p>Omicron Beats Vaccine</p>
+          <p>Face Mask Beats Omicron</p>
+        </>}
+        handleClose={togglePopup}
+      />}
+
+    </button>
   );
 };
 
