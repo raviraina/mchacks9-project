@@ -145,12 +145,8 @@ const Game = () => {
               </>
             )}
             {!isInGame && (
-              <button onClick={() => requestToJoinGame()}>Join Game</button>
+              <button className="login-button" style={} onClick={() => requestToJoinGame()}>Join Game</button>
             )}
-          </div>
-          <div className="timer-and-result">
-            <h2 className="timer-message">Pick an option...</h2>
-            <h2 className="countdown-timer">{countdown}</h2>
           </div>
           <div className="options-menu">
             {options.map((item) => {
