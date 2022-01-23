@@ -5,11 +5,17 @@ const socketio = require("socket.io");
 const randomstring = require('randomstring');
 const app = express();
 
+//const server = http.createServer(app);
+
+
+//const io = socketio(server)
 const server = http.createServer(app);
-
-app.use(express.static(path.join(__dirname, "public")));
-
-const io = socketio(server);
+const { Server } = require("socket.io");
+const io = new Server(server, {
+    cors:{
+        origin: "http://localhost:3000"
+    }
+});
 
 const {
     userConnected,
@@ -35,9 +41,12 @@ const {
 // };
 
 const allRoomsFull = () => {
-    // let areRoomsFull = true;
+     //let areRoomsFull = true;
+     //rooms.forEach((item)=>{
+
+     //})
     for (let room in rooms) {
-        if (room[1] === "") {
+        if (rooms[room][1] === "") {
             return false
         }
     }
@@ -45,10 +54,14 @@ const allRoomsFull = () => {
 }
 
 io.on("connection", socket => {
+    console.log("user connected")
 
     // socket.emit("createJoinRoom", player);
     socket.on("createJoinRoom", player => {
-        if (Object.keys(rooms).length < 1 || allRoomsFull === true) {
+        console.log("user trying to join room: " + player + " with socket id " + socket.client.id)
+        console.log(rooms)
+        console.log(allRoomsFull())
+        if (Object.keys(rooms).length < 1 || allRoomsFull() === true) {
             const roomId = randomstring.generate({
                 length: 4
             });
@@ -60,13 +73,14 @@ io.on("connection", socket => {
             // roomIDs[roomId] = [player]
         } else {
             for (let room in rooms) {
-                if (rooms[room][1] != "") {
+                console.log(rooms[room][1])
+                if (rooms[room][1] === "") {
                     let roomId = room
                     userConnected(socket.client.id);
                     joinRoom(roomId, socket.client.id);
                     socket.join(roomId);
                     socket.emit("room-joined", roomId);
-                    socket.emit("player-2-connected");
+                    socket.emit("player-2-connected", player);
                     socket.broadcast.to(roomId).emit("player-2-connected");
                     initializeChoices(roomId);
                     break
