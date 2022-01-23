@@ -1,22 +1,23 @@
+// init
 const express = require("express");
 const http = require("http");
 const path = require("path");
 const socketio = require("socket.io");
 const randomstring = require('randomstring');
 const app = express();
-
-//const server = http.createServer(app);
-
-
-//const io = socketio(server)
 const server = http.createServer(app);
-const { Server } = require("socket.io");
+
+// setup server
+const {
+    Server
+} = require("socket.io");
 const io = new Server(server, {
-    cors:{
+    cors: {
         origin: "http://localhost:3000"
     }
 });
 
+// get users and rooms modules
 const {
     userConnected,
     connectedUsers,
@@ -25,26 +26,22 @@ const {
     makeMove,
     choices
 } = require("./users");
+
 const {
     createRoom,
     joinRoom,
     exitRoom,
     rooms
 } = require("./rooms");
+
+// init
 const e = require("express");
 const {
     exitCode
 } = require("process");
 
-// roomIDs = {
-//     "some_id": [player1, player2]
-// };
-
+// helper function to check room status
 const allRoomsFull = () => {
-     //let areRoomsFull = true;
-     //rooms.forEach((item)=>{
-
-     //})
     for (let room in rooms) {
         if (rooms[room][1] === "") {
             return false
@@ -53,12 +50,23 @@ const allRoomsFull = () => {
     return true;
 }
 
+const updateLeaderboard = (playerID, win) => {
+    // if playerID not in database
+    // create playerID entry
+
+    // if win is true
+    // increment playerID win, games played fields
+    // else
+    // increment games played field
+}
+
+// socket functions
 io.on("connection", socket => {
     console.log("user connected")
 
-    // socket.emit("createJoinRoom", player);
     socket.on("createJoinRoom", player => {
         console.log("user trying to join room: " + player + " with socket id " + socket.client.id)
+
         if (Object.keys(rooms).length < 1 || allRoomsFull() === true) {
             const roomId = randomstring.generate({
                 length: 4
@@ -68,10 +76,10 @@ io.on("connection", socket => {
             socket.emit("room-created", roomId);
             socket.emit("player-1-connected");
             socket.join(roomId);
-            // roomIDs[roomId] = [player]
         } else {
             for (let room in rooms) {
                 console.log(rooms[room][1])
+
                 if (rooms[room][1] === "") {
                     let roomId = room
                     userConnected(socket.client.id);
@@ -88,6 +96,7 @@ io.on("connection", socket => {
     })
 
     socket.on("make-move", ({
+        userId,
         playerId,
         myChoice,
         roomId
@@ -109,8 +118,10 @@ io.on("connection", socket => {
 
                 if (playerId === 1) {
                     enemyChoice = playerTwoChoice;
+                    updateLeaderboard(userId, true);
                 } else {
                     enemyChoice = playerOneChoice;
+                    updateLeaderboard(userId, false);
                 }
 
                 io.to(roomId).emit("player-1-wins", {
@@ -122,10 +133,13 @@ io.on("connection", socket => {
 
                 if (playerId === 1) {
                     enemyChoice = playerTwoChoice;
+                    updateLeaderboard(userId, true);
                 } else {
                     enemyChoice = playerOneChoice;
+                    updateLeaderboard(userId, false);
                 }
 
+                updateLeaderboard(userId, true)
                 io.to(roomId).emit("player-2-wins", {
                     myChoice,
                     enemyChoice
