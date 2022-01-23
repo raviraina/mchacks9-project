@@ -1,20 +1,33 @@
 import "./Game.css";
-import React from "react";
+import React, { useEffect } from "react";
 import { useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
+import io from "socket.io-client";
+
+/*
+"rock": "scissor",
+    "paper": "rock",
+    "scissor": "paper"
+};
+
+
+*/
 
 const options = [
   {
     id: 1,
     src: "/mask.png",
+    type: "rock"
   },
   {
     id: 2,
     src: "/vaccine.png",
+    type: "paper"
   },
   {
     id: 3,
     src: "/omicron.png",
+    type:"scissor"
   },
 ];
 
@@ -37,16 +50,67 @@ const Game = () => {
   const { user, isAuthenticated } = useAuth0();
   const [countdown, setCountdown] = useState(5);
   const [selection, setSelection] = useState(undefined);
+  const [socket, setSocket] = useState(null);
+  const [isInGame, setIsInGame] = useState(false);
+  const [roomdID, setRoomID] = useState(null);
+  const [playerNum, setPlayerNum] = useState(null);
+  const [hasWon, setHasWon] = useState(null)
 
-  const recursiveCount = (number) => {
-    let mynum = number;
-    const timer = setInterval(() => {
-      if (mynum <= 1) {
-        clearInterval(timer);
-      }
-      setCountdown((prev) => prev - 1);
-      mynum -= 1;
-    }, 1000);
+
+  useEffect(() => {
+    const newSocket = io("http://localhost:4000");
+    setSocket(newSocket);
+    newSocket.on("room-created", (roomId) => {
+      console.log("first player: " + roomId);
+      setPlayerNum(1);
+      setRoomID(roomId);
+    });
+    newSocket.on("player-2-connected", () => {
+      console.log("player 2 connected");
+      setIsInGame(true);
+    });
+    newSocket.on("room-joined", (roomId) => {
+      console.log("second player: " + roomId);
+      setRoomID(roomId);
+      setPlayerNum(2);
+    });
+    // results listeners 
+    newSocket.on("player-1-wins", () => {
+      console.log("player 1 wins");
+      setRoomID(null)
+      setIsInGame(false)
+      setSelection(undefined)
+    });
+    newSocket.on("player-2-wins", () => {
+      console.log("player 2 wins");
+      setRoomID(null)
+      setIsInGame(false)
+      setSelection(undefined)
+    });
+    newSocket.on("draw", () => {
+      console.log("draw");
+      setRoomID(null)
+      setIsInGame(false)
+      setSelection(undefined)
+    });
+    return () => newSocket.close();
+  }, []);
+
+  const requestToJoinGame = () => {
+    socket.emit("createJoinRoom", user.name);
+  };
+
+
+  const onOptionSelect = (id) => {
+    setSelection(id);
+    const choice = options.filter((item)=>item.id === id)[0].type
+    const data = {
+      playerId: playerNum,
+      myChoice: choice,
+      roomId: roomdID,
+    };
+    console.log(JSON.stringify(data));
+    socket.emit("make-move", data);
   };
 
   if (isAuthenticated) {
@@ -55,22 +119,34 @@ const Game = () => {
         <div className="game-container">
           <TitleBar></TitleBar>
           <div className="player-display">
-            <div className="player-info">
-              <img
-                className="profile-pic"
-                src="/default-player-icon.jpeg"
-                alt="opponent profile pic"
-              ></img>
-              <h2 className="username">opponent</h2>
-            </div>
-            <div className="player-info">
-              <img
-                className="profile-pic"
-                src={user.picture ? user.picture : "/default-player-icon.jpeg"}
-                alt="profile pic"
-              ></img>
-              <h2 className="username"> {user.name ? user.name : "You"} </h2>
-            </div>
+            {isInGame && (
+              <>
+                <div className="player-info">
+                  <img
+                    className="profile-pic"
+                    src="/default-player-icon.jpeg"
+                    alt="opponent profile pic"
+                  ></img>
+                  <h2 className="username">opponent</h2>
+                </div>
+                <div className="player-info">
+                  <img
+                    className="profile-pic"
+                    src={
+                      user.picture ? user.picture : "/default-player-icon.jpeg"
+                    }
+                    alt="profile pic"
+                  ></img>
+                  <h2 className="username">
+                    {" "}
+                    {user.name ? user.name : "You"}{" "}
+                  </h2>
+                </div>
+              </>
+            )}
+            {!isInGame && (
+              <button onClick={() => requestToJoinGame()}>Join Game</button>
+            )}
           </div>
           <div className="timer-and-result">
             <h2 className="timer-message">Pick an option...</h2>
@@ -78,12 +154,12 @@ const Game = () => {
           </div>
           <div className="options-menu">
             {options.map((item) => {
-              console.log(item);
               return (
                 <Option
                   id={item.id}
+                  key={item.id}
                   src={item.src}
-                  setSelection={setSelection}
+                  setSelection={onOptionSelect}
                   selection={selection}
                 ></Option>
               );
