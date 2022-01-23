@@ -1,20 +1,26 @@
 import "./Game.css";
-import React from "react";
+import React, { useEffect } from "react";
 import { useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
+import io from "socket.io-client";
+import { useNavigate } from "react-router-dom";
+import Popup from "./Popup";
 
 const options = [
   {
     id: 1,
     src: "/mask.png",
+    type: "rock",
   },
   {
     id: 2,
     src: "/vaccine.png",
+    type: "paper",
   },
   {
     id: 3,
     src: "/omicron.png",
+    type: "scissor",
   },
 ];
 
@@ -35,18 +41,115 @@ export const TitleBar = () => {
 
 const Game = () => {
   const { user, isAuthenticated } = useAuth0();
-  const [countdown, setCountdown] = useState(5);
   const [selection, setSelection] = useState(undefined);
+  const [socket, setSocket] = useState(null);
+  const [isInGame, setIsInGame] = useState(false);
+  const [roomdID, setRoomID] = useState(null);
+  const [playerNum, setPlayerNum] = useState(0);
+  const [result, setResult] = useState(null);
+  const [pressedJoinGame, setPressedJoinGame] = useState(false);
+  const [opponent, setOppenent] = useState(null);
 
-  const recursiveCount = (number) => {
-    let mynum = number;
-    const timer = setInterval(() => {
-      if (mynum <= 1) {
-        clearInterval(timer);
+  const resultFinder = () => {
+    console.log(window.localStorage.getItem("player"));
+  };
+
+  useEffect(() => {
+    const newSocket = io("http://localhost:4000");
+    setSocket(newSocket);
+    newSocket.on("disconnect", ()=>{
+      setPlayerNum(null);
+      setRoomID(null);
+      setIsInGame(false);
+      setSelection(undefined);
+      setPressedJoinGame(false);
+      
+    })
+    newSocket.on("room-created", (roomId) => {
+      console.log("first player: " + roomId);
+      setPlayerNum(1);
+      setRoomID(roomId);
+    });
+    newSocket.on("player-2-connected", (player) => {
+      console.log("player 2 connected, with id: " + player);
+      setOppenent(player);
+      setIsInGame(true);
+      newSocket.broadcast.emit("player-opp", user.name);
+    });
+    newSocket.on("room-joined", (roomId) => {
+      console.log("second player: " + roomId);
+      setRoomID(roomId);
+      setPlayerNum(2);
+    });
+    newSocket.on("player-opp", (player) => {
+      console.log("player oppenent thing");
+      setOppenent(player);
+    });
+    // results listeners
+    newSocket.on("player-1-wins", () => {
+      console.log(
+        "player 1 wins, heres your id: " + window.localStorage.getItem("player")
+      );
+      if (window.localStorage.getItem("player") === "1") {
+        setResult("You Won!");
+      } else {
+        setResult("You Lost!");
       }
-      setCountdown((prev) => prev - 1);
-      mynum -= 1;
-    }, 1000);
+
+      setPlayerNum(null);
+      setRoomID(null);
+      setIsInGame(false);
+      setSelection(undefined);
+      setPressedJoinGame(false);
+    });
+    newSocket.on("player-2-wins", () => {
+      console.log(
+        "player 2 wins, heres your id: " + window.localStorage.getItem("player")
+      );
+      if (window.localStorage.getItem("player") === "2") {
+        setResult("You Won!");
+      } else {
+        setResult("You Lost!");
+      }
+      setPlayerNum(null);
+      setRoomID(null);
+      setIsInGame(false);
+      setSelection(undefined);
+      setPressedJoinGame(false);
+    });
+    newSocket.on("draw", () => {
+      console.log("draw");
+      setResult("Draw");
+
+      setPlayerNum(null);
+      setRoomID(null);
+      setIsInGame(false);
+      setSelection(undefined);
+      setPressedJoinGame(false);
+    });
+    return () => newSocket.close();
+  }, []);
+
+  const requestToJoinGame = () => {
+    setPressedJoinGame(true);
+    socket.emit("createJoinRoom", user.name);
+  };
+
+  const onOptionSelect = (id) => {
+    if (isInGame === false) {
+      return 0;
+    }
+    setSelection(id);
+    const choice = options.filter((item) => item.id === id)[0].type;
+    const data = {
+      userId: user.name,
+      playerId: playerNum,
+      myChoice: choice,
+      roomId: roomdID,
+    };
+    window.localStorage.setItem("player", playerNum);
+    console.log(JSON.stringify(data));
+    socket.emit("make-move", data);
   };
 
   if (isAuthenticated) {
@@ -55,35 +158,55 @@ const Game = () => {
         <div className="game-container">
           <TitleBar></TitleBar>
           <div className="player-display">
-            <div className="player-info">
-              <img
-                className="profile-pic"
-                src="/default-player-icon.jpeg"
-                alt="opponent profile pic"
-              ></img>
-              <h2 className="username">opponent</h2>
-            </div>
-            <div className="player-info">
-              <img
-                className="profile-pic"
-                src={user.picture ? user.picture : "/default-player-icon.jpeg"}
-                alt="profile pic"
-              ></img>
-              <h2 className="username"> {user.name ? user.name : "You"} </h2>
-            </div>
-          </div>
-          <div className="timer-and-result">
-            <h2 className="timer-message">Pick an option...</h2>
-            <h2 className="countdown-timer">{countdown}</h2>
+            {isInGame && (
+              <>
+                <div className="player-info">
+                  <img
+                    className="profile-pic"
+                    src="/default-player-icon.jpeg"
+                    alt="opponent profile pic"
+                  ></img>
+                  <h2 className="username">
+                    {opponent ? opponent : "Other Player"}
+                  </h2>
+                </div>
+                <div className="player-info">
+                  <img
+                    className="profile-pic"
+                    src={
+                      user.picture ? user.picture : "/default-player-icon.jpeg"
+                    }
+                    alt="profile pic"
+                  ></img>
+                  <h2 className="username">
+                    {" "}
+                    {user.name ? user.name : "You"}{" "}
+                  </h2>
+                </div>
+              </>
+            )}
+            {!pressedJoinGame && result && <div>{result}</div>}
+            {pressedJoinGame && !isInGame && (
+              <div>Waiting for opponent... </div>
+            )}
+            {!pressedJoinGame && (
+              <button
+                className="login-button"
+                style={{ padding: "20px" }}
+                onClick={() => requestToJoinGame()}
+              >
+                Join Game
+              </button>
+            )}
           </div>
           <div className="options-menu">
             {options.map((item) => {
-              console.log(item);
               return (
                 <Option
                   id={item.id}
+                  key={item.id}
                   src={item.src}
-                  setSelection={setSelection}
+                  setSelection={onOptionSelect}
                   selection={selection}
                 ></Option>
               );
@@ -131,34 +254,90 @@ const SettingsIcon = () => {
 };
 
 const StatsIcon = () => {
+  const navigate = useNavigate();
+  const selectStats = (event) => {
+    navigate("/");
+  };
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      height="24"
-      viewBox="0 0 24 24"
-      width="24"
-    >
-      <path
-        fill="var(--color-tone-3)"
-        d="M16,11V3H8v6H2v12h20V11H16z M10,5h4v14h-4V5z M4,11h4v8H4V11z M20,19h-4v-6h4V19z"
-      ></path>
-    </svg>
+    <button style={{"textDecoration": "none"}} onClick={selectStats}>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          fill="var(--color-tone-3)"
+          d="M16,11V3H8v6H2v12h20V11H16z M10,5h4v14h-4V5z M4,11h4v8H4V11z M20,19h-4v-6h4V19z"
+        ></path>
+      </svg>
+    </button>
   );
 };
 const QuestionIcon = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const togglePopup = () => {
+    setIsOpen(!isOpen);
+  };
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      height="24"
-      viewBox="0 0 24 24"
-      width="24"
-    >
-      <path
-        fill="var(--color-tone-3)"
-        d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"
-      ></path>
-    </svg>
+    <button onClick={togglePopup}>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          fill="var(--color-tone-3)"
+          d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"
+        ></path>
+      </svg>
+
+      {isOpen && (
+        <Popup
+          content={
+            <>
+              <p>Vaccine Beats Face Mask </p>
+              <p>Omicron Beats Vaccine</p>
+              <p>Face Mask Beats Omicron</p>
+            </>
+          }
+          handleClose={togglePopup}
+        />
+      )}
+    </button>
   );
 };
+
+//const StatsIcon = () => {
+//return (
+//<svg
+//xmlns="http://www.w3.org/2000/svg"
+//height="24"
+//viewBox="0 0 24 24"
+//width="24"
+//>
+//<path
+//fill="var(--color-tone-3)"
+//d="M16,11V3H8v6H2v12h20V11H16z M10,5h4v14h-4V5z M4,11h4v8H4V11z M20,19h-4v-6h4V19z"
+//></path>
+//</svg>
+//);
+//};
+//const QuestionIcon = () => {
+//return (
+//<svg
+//xmlns="http://www.w3.org/2000/svg"
+//height="24"
+//viewBox="0 0 24 24"
+//width="24"
+//>
+//<path
+//fill="var(--color-tone-3)"
+//d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"
+//></path>
+//</svg>
+//);
+//};
 
 export default Game;
