@@ -59,8 +59,6 @@ io.on("connection", socket => {
     // socket.emit("createJoinRoom", player);
     socket.on("createJoinRoom", player => {
         console.log("user trying to join room: " + player + " with socket id " + socket.client.id)
-        console.log(rooms)
-        console.log(allRoomsFull())
         if (Object.keys(rooms).length < 1 || allRoomsFull() === true) {
             const roomId = randomstring.generate({
                 length: 4
@@ -89,66 +87,14 @@ io.on("connection", socket => {
         }
     })
 
-    // socket.on("create-room", (roomId) => {
-    //     if (rooms[roomId]) {
-    //         const error = "This room already exists";
-    //         socket.emit("display-error", error);
-    //     } else {
-    //         userConnected(socket.client.id);
-    //         createRoom(roomId, socket.client.id);
-    //         socket.emit("room-created", roomId);
-    //         socket.emit("player-1-connected");
-    //         socket.join(roomId);
-    //     }
-    // })
-
-    // socket.on("join-room", roomId => {
-    //     if (!rooms[roomId]) {
-    //         const error = "This room doen't exist";
-    //         socket.emit("display-error", error);
-    //     } else {
-    //         userConnected(socket.client.id);
-    //         joinRoom(roomId, socket.client.id);
-    //         socket.join(roomId);
-
-    //         socket.emit("room-joined", roomId);
-    //         socket.emit("player-2-connected");
-    //         socket.broadcast.to(roomId).emit("player-2-connected");
-    //         initializeChoices(roomId);
-    //     }
-    // })
-
-    // socket.on("join-random", () => {
-    //     let roomId = "";
-
-    //     for (let id in rooms) {
-    //         if (rooms[id][1] === "") {
-    //             roomId = id;
-    //             break;
-    //         }
-    //     }
-
-    //     if (roomId === "") {
-    //         const error = "All rooms are full or none exists";
-    //         socket.emit("display-error", error);
-    //     } else {
-    //         userConnected(socket.client.id);
-    //         joinRoom(roomId, socket.client.id);
-    //         socket.join(roomId);
-
-    //         socket.emit("room-joined", roomId);
-    //         socket.emit("player-2-connected");
-    //         socket.broadcast.to(roomId).emit("player-2-connected");
-    //         initializeChoices(roomId);
-    //     }
-    // });
-
     socket.on("make-move", ({
         playerId,
         myChoice,
         roomId
     }) => {
         makeMove(roomId, playerId, myChoice);
+        console.log("move made: " + myChoice + " by player " + playerId + " in room " + roomId)
+        console.log(JSON.stringify(choices))
 
         if (choices[roomId][0] !== "" && choices[roomId][1] !== "") {
             let playerOneChoice = choices[roomId][0];
